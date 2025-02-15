@@ -31,23 +31,30 @@ default_resources = [
             "Amount": 0,
             "Description": "The Life-blood of all magic, stripped from the aether which veils our world and all other planes.",
             "Discovered": 1,
+            "Purchasable": False,
         },
         "Runes": {
             "Amount": 0,
             "Cost": 10,
             "Description" : "Ancient writing that harnesses the mana to take action in the real world.S",
+            "Delta": 1.1,
+            "Purchasable": True,
             "Discovered": 0,
         },
         "Mirror Images": {
             "Amount": 0,
             "Cost": 100,
             "Description": "Command your reflection to generate more " ,
+            "Delta": 1.25,
+            "Purchasable": True,
             "Discovered": 0,
         },
         "Simulacrum": {
             "Amount": 0,
             "Cost": 10000,
             "Description": "Use pure mana to form a facimile, a second body for yourself.",
+            "Delta": 1.5,
+            "Purchasable": True,
             "Discovered": 0,
         },
     }
@@ -98,16 +105,68 @@ def loading_bar(duration):
         time.sleep(duration / progress_bar_length)
     print()
 
+def purchase_resource(resource_name_input):
+    purchased = False
+    for resource_dict in resources:
+        for resource_name, resource_data in resource_dict.items():
+            if resource_name.lower() == resource_name_input.lower():
+                if resource_data["Purchasable"]:
+                    if resource_data["Cost"] <= resources[0]["Mana"]["Amount"]:
+                        resources[0]["Mana"]["Amount"] -= resource_data["Cost"]
+                        resource_data["Amount"] += 1
+                        resource_data["Cost"] = round(resource_data["Cost"] * resource_data["Delta"])
+                        print(f"{resource_name} purchased!")
+                        purchased = True
+                        break
+                    else:
+                        print("Not enough Mana to purchase this resource.")
+                        purchased = True
+                        break
+                else:
+                    print(f"{resource_name} is not purchasable. Perhaps there's another way I could find it...")
+                    purchased = True
+                    break
+        if purchased:
+            break
+    if purchased:
+        save_game()
+    elif not purchased and not any(resource_name.lower() == resource_name_input.lower() for resource_dict in resources for resource_name in resource_dict):
+        print(f"'{resource_name_input}'? I'm uncertain of what this may be.")
+
 def condense_mana():
-    print(f"Condensing Mana for {duration} seconds to gain {gain} Mana...")
-    loading_bar(duration)
+    global duration, gain
+
+    condense_duration = 0
+    condense_gain = 0
+
+    condense_duration = duration * (1 + resources[0]['Runes']['Amount']) / (1 + resources[0]['Simulacrum']['Amount'])
+    condense_gain = (gain + ((1 * resources[0]['Runes']['Amount'])) * (1 + (1.5 * resources[0]['Mirror Images']['Amount'])))
+    print(f"Condensing Mana for {condense_duration} seconds to gain {condense_gain} Mana...")
+    loading_bar(condense_duration)
 
     for resource_dict in resources:
         if "Mana" in resource_dict:
-            resource_dict["Mana"]["Amount"] += gain
-            break
+            resource_dict["Mana"]["Amount"] += condense_gain
+            if resource_dict["Mana"]["Amount"] > max_mana:
+                resource_dict["Mana"]["Amount"] = max_mana
     save_game()
-    print(f"Mana Condensation Complete! Gained {gain} Mana.")
+    print(f"Mana Condensation Complete! Gained {int(condense_gain)} Mana.  You now have {int(resource_dict['Mana']['Amount'])} Mana")
+    check_discovered_status()
+
+def check_discovered_status():
+    if resources[0]["Mana"]["Amount"] >= resources[0]["Runes"]["Cost"]:
+        resources[0]["Runes"]["Discovered"] = True
+        print("New resource discovered!  Runes!")
+    if resources[0]["Mana"]["Amount"] >= resources[0]["Mirror Images"]["Cost"]:
+        resources[0]["Mirror Images"]["Discovered"] = True
+        print("New resource discovered!  Mirror Images!")
+    if resources[0]["Mana"]["Amount"] >= resources[0]["Simulacrum"]["Cost"]:
+        resources[0]["Simulacrum"]["Discovered"] = True
+        print("New resource discovered!  Simulacrum!")
+    save_game()
+    return
+
+
 
 def save_game():
     with open("save.json", "w") as save_file:
@@ -131,6 +190,7 @@ def help_command():
     print("Available commands:")
     print("  storage - Display all resources.")
     print("  check <resource_name> - Check amount of a specific resource (e.g., check mana)")
+    print("  purchase <resource_name> - Purchase a resource.")
     print("  condense - Begin condensing mana.")
     print("  help - Display this help message.")
     print("  exit - Quit the program.")
@@ -178,6 +238,14 @@ def main():
                 print("Game has been reset.")
             else:
                 print("Game has not been reset.")
+        elif command_parts[0] == "purchase":
+            if len(command_parts) > 1:
+                resource_name_to_purchase = command_parts[1]
+                purchase_resource(resource_name_to_purchase)
+            else:
+                print("What are you trying to purchase?")
+                response = input()
+                purchase_resource(response)
         elif command_parts[0] == "help":
             help_command()
         elif command_parts[0] == "exit":
