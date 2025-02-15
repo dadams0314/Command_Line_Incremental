@@ -1,54 +1,79 @@
 import time
 import random
 import json
+import os
 
-resources = [
+# Startup Art
+Startup_Art =  """
+▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄   ████████▄        ▄█        ▄█  ███▄▄▄▄      ▄████████ 
+███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███▀▀▀██▄ ███   ▀███      ███       ███  ███▀▀▀██▄   ███    ███ 
+███    █▀  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███      ███       ███▌ ███   ███   ███    █▀  
+███        ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███      ███       ███▌ ███   ███  ▄███▄▄▄     
+███        ███    ███ ███   ███   ███ ███   ███   ███ ▀███████████ ███   ███ ███    ███      ███       ███▌ ███   ███ ▀▀███▀▀▀     
+███    █▄  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███      ███       ███  ███   ███   ███    █▄  
+███    ███ ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███   ▄███      ███▌    ▄ ███  ███   ███   ███    ███ 
+████████▀   ▀██████▀   ▀█   ███   █▀   ▀█   ███   █▀    ███    █▀   ▀█   █▀  ████████▀       █████▄▄██ █▀    ▀█   █▀    ██████████ 
+                                                                                             ▀                                     
+ ▄█  ███▄▄▄▄    ▄████████    ▄████████    ▄████████   ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄       ███        ▄████████  ▄█            
+███  ███▀▀▀██▄ ███    ███   ███    ███   ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███▀▀▀██▄ ▀█████████▄   ███    ███ ███            
+███▌ ███   ███ ███    █▀    ███    ███   ███    █▀  ███   ███   ███   ███    █▀  ███   ███    ▀███▀▀██   ███    ███ ███            
+███▌ ███   ███ ███         ▄███▄▄▄▄██▀  ▄███▄▄▄     ███   ███   ███  ▄███▄▄▄     ███   ███     ███   ▀   ███    ███ ███            
+███▌ ███   ███ ███        ▀▀███▀▀▀▀▀   ▀▀███▀▀▀     ███   ███   ███ ▀▀███▀▀▀     ███   ███     ███     ▀███████████ ███            
+███  ███   ███ ███    █▄  ▀███████████   ███    █▄  ███   ███   ███   ███    █▄  ███   ███     ███       ███    ███ ███            
+███  ███   ███ ███    ███   ███    ███   ███    ███ ███   ███   ███   ███    ███ ███   ███     ███       ███    ███ ███▌    ▄      
+█▀    ▀█   █▀  ████████▀    ███    ███   ██████████  ▀█   ███   █▀    ██████████  ▀█   █▀     ▄████▀     ███    █▀  █████▄▄██      
+                            ███    ███                                                                              ▀            
+"""
+# Mana Resources
+default_resources = [
     {
         "Mana": {
             "Amount": 0,
-            "Description": "The Life-blood of all magic, stripped from the aether which veils our world and all other planes."
+            "Description": "The Life-blood of all magic, stripped from the aether which veils our world and all other planes.",
+            "Discovered": 1,
         },
         "Runes": {
             "Amount": 0,
-            "Cost": 0,
-            "Description" : "Ancient writing that harnesses the mana to take action in the real world.S"
-        }
+            "Cost": 10,
+            "Description" : "Ancient writing that harnesses the mana to take action in the real world.S",
+            "Discovered": 0,
+        },
+        "Mirror Images": {
+            "Amount": 0,
+            "Cost": 100,
+            "Description": "Command your reflection to generate more " ,
+            "Discovered": 0,
+        },
+        "Simulacrum": {
+            "Amount": 0,
+            "Cost": 10000,
+            "Description": "Use pure mana to form a facimile, a second body for yourself.",
+            "Discovered": 0,
+        },
     }
 ]
 
-Startup_Art = """
-.sSSSSs.                                                                                                SSSSS                                        
-SSSSSSSSSs. .sSSSSs.    .sSSSsSS SSsSSSSS .sSSSsSS SSsSSSSS .sSSSSs.    .sSSSs.  SSSSS .sSSSSs.         SSSSS       SSSSS .sSSSs.  SSSSS .sSSSSs.    
-S SSS SSSSS S SSSSSSSs. S SSS  SSS  SSSSS S SSS  SSS  SSSSS S SSSSSSSs. S SSS SS SSSSS S SSSSSSSs.      S SSS       S SSS S SSS SS SSSSS S SSSSSSSs. 
-S  SS SSSS' S  SS SSSSS S  SS   S   SSSSS S  SS   S   SSSSS S  SS SSSSS S  SS  `sSSSSS S  SS SSSSS      S  SS       S  SS S  SS  `sSSSSS S  SS SSSS' 
-S..SS       S..SS SSSSS S..SS       SSSSS S..SS       SSSSS S..SSsSSSSS S..SS    SSSSS S..SS SSSSS      S..SS       S..SS S..SS    SSSSS S..SS       
-S:::S SSSSS S:::S SSSSS S:::S       SSSSS S:::S       SSSSS S:::S SSSSS S:::S    SSSSS S:::S SSSSS      S:::S       S:::S S:::S    SSSSS S:::SSSS    
-S;;;S SSSSS S;;;S SSSSS S;;;S       SSSSS S;;;S       SSSSS S;;;S SSSSS S;;;S    SSSSS S;;;S SSSSS      S;;;S       S;;;S S;;;S    SSSSS S;;;S       
-S%%%S SSSSS S%%%S SSSSS S%%%S       SSSSS S%%%S       SSSSS S%%%S SSSSS S%%%S    SSSSS S%%%S SSSS'      S%%%S SSSSS S%%%S S%%%S    SSSSS S%%%S SSSSS 
-SSSSSsSSSSS SSSSSsSSSSS SSSSS       SSSSS SSSSS       SSSSS SSSSS SSSSS SSSSS    SSSSS SSSSSsS;:'       SSSSSsSS;:' SSSSS SSSSS    SSSSS SSSSSsSS;:' 
-                                                                                                                                                     
-SSSSS                                                                                                                                                
-SSSSS .sSSSs.  SSSSS .sSSSSs.    .sSSSSSSSs. .sSSSSs.    .sSSSsSS SSsSSSSS .sSSSSs.    .sSSSs.  SSSSS .sSSSSSSSSSSSSSs. .sSSSSs.    SSSSS            
-S SSS S SSS SS SSSSS S SSSSSSSs. S SSS SSSSS S SSSSSSSs. S SSS  SSS  SSSSS S SSSSSSSs. S SSS SS SSSSS SSSSS S SSS SSSSS S SSSSSSSs. S SSS            
-S  SS S  SS  `sSSSSS S  SS SSSS' S  SS SSSS' S  SS SSSS' S  SS   S   SSSSS S  SS SSSS' S  SS  `sSSSSS SSSSS S  SS SSSSS S  SS SSSSS S  SS            
-S..SS S..SS    SSSSS S..SS       S..SSsSSSa. S..SS       S..SS       SSSSS S..SS       S..SS    SSSSS `:S:' S..SS `:S:' S..SSsSSSSS S..SS            
-S:::S S:::S    SSSSS S:::S SSSSS S:::S SSSSS S:::SSSS    S:::S       SSSSS S:::SSSS    S:::S    SSSSS       S:::S       S:::S SSSSS S:::S            
-S;;;S S;;;S    SSSSS S;;;S SSSSS S;;;S SSSSS S;;;S       S;;;S       SSSSS S;;;S       S;;;S    SSSSS       S;;;S       S;;;S SSSSS S;;;S            
-S%%%S S%%%S    SSSSS S%%%S SSSSS S%%%S SSSSS S%%%S SSSSS S%%%S       SSSSS S%%%S SSSSS S%%%S    SSSSS       S%%%S       S%%%S SSSSS S%%%S SSSSS      
-SSSSS SSSSS    SSSSS SSSSSsSSSSS SSSSS SSSSS SSSSSsSS;:' SSSSS       SSSSS SSSSSsSS;:' SSSSS    SSSSS       SSSSS       SSSSS SSSSS SSSSSsSS;:' 
-"""
+resources = list(default_resources)
 
 # Starting Values
 duration = 1
 gain = 1
+max_mana = 1_000_000_000
+
+# Functions
 
 def Storage():
     print("--------Storage--------")
     for resource_dict in resources:
         for resource_name, resource_data in resource_dict.items():
+            if resource_data["Discovered"] == 1:
+                pass
+            else:
+                continue
             print(f"{resource_name}:")
             print(f"  Amount: {resource_data['Amount']}")
-            print(f"  Cost: {resource_data['Cost']}")
+            if "Cost" in resource_data:
+                print(f"  Cost: {resource_data['Cost']} mana")
             print(f"  Description: {resource_data['Description']}")
             print()
     print("------------------------")
@@ -81,8 +106,26 @@ def condense_mana():
         if "Mana" in resource_dict:
             resource_dict["Mana"]["Amount"] += gain
             break
-
+    save_game()
     print(f"Mana Condensation Complete! Gained {gain} Mana.")
+
+def save_game():
+    with open("save.json", "w") as save_file:
+        json.dump(resources, save_file)
+
+def load_game():
+    if os.path.exists("save.json"):
+        with open("save.json", "r") as save_file:
+            global resources
+            resources = json.load(save_file)
+            print("Game Loaded")
+    else:
+        print("No save file found. Starting new game.")
+
+def reset_game():
+    global resources
+    resources[:] = list(default_resources)
+    save_game()
 
 def help_command():
     print("Available commands:")
@@ -94,11 +137,15 @@ def help_command():
 
 def main():
 
+    # Startup Splash
     print(Startup_Art)
     print("Welcome to the game... Command Line Incremental!")
     print("Type 'help' to see available commands.")
     print()
 
+    load_game()
+
+    # Main Gameplay
     while True:
         command = input("Enter Command: ")
         command_parts = command.split()
@@ -110,12 +157,27 @@ def main():
                 resource_name_to_check = command_parts[1]
                 check_resource(resource_name_to_check)
             else:
-                print("Usage: check <resource_name>")
+                print("Available resources: ")
+                for resource_dict in resources:
+                    for resource_name, resource_data in resource_dict.items():
+                        if resource_data["Discovered"] == 1:
+                            pass
+                        else:
+                            continue
+                        print(f"{resource_name}")
         elif command_parts[0] == "condense":
             if len(command_parts) == 1:
                 condense_mana()
             else:
                 print("Usage: condense")
+        elif command_parts[0] == "reset":
+            print("Are you absolutely sure you want to reset?  This will return the game to the very beginning. (Yes / anything else... please...)")
+            confirmation = input().lower()
+            if confirmation == "yes":
+                reset_game()
+                print("Game has been reset.")
+            else:
+                print("Game has not been reset.")
         elif command_parts[0] == "help":
             help_command()
         elif command_parts[0] == "exit":
