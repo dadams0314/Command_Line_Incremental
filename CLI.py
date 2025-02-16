@@ -30,7 +30,7 @@ default_resources = [
         "Mana": {
             "Amount": 0,
             "Description": "The Life-blood of all magic, stripped from the aether which veils our world and all other planes.",
-            "Discovered": 1,
+            "Discovered": True,
             "Purchasable": False,
         },
         "Runes": {
@@ -51,10 +51,16 @@ default_resources = [
         },
         "Simulacrum": {
             "Amount": 0,
-            "Cost": 10000,
+            "Cost": 1_000,
             "Description": "Use pure mana to form a facimile, a second body for yourself.",
             "Delta": 1.5,
             "Purchasable": True,
+            "Discovered": False,
+        },
+        "Crystallized Mana": {
+            "Amount": 0,
+            "Description": "The physical manefestation made entirely from a massive density of pure mana.",
+            "Purchasable": False,
             "Discovered": False,
         },
     }
@@ -65,7 +71,7 @@ resources = list(default_resources)
 # Starting Values
 duration = 1
 gain = 1
-max_mana = 1_000_000_000
+max_mana = 50_000
 
 # Functions
 
@@ -141,35 +147,47 @@ def condense_mana():
 
     condense_duration = duration * (1 + resources[0]['Runes']['Amount']) / (1 + resources[0]['Simulacrum']['Amount'])
     condense_gain = (gain + ((1 * resources[0]['Runes']['Amount'])) * (1 + (1.5 * resources[0]['Mirror Image']['Amount'])))
-    print(f"Condensing Mana for {condense_duration} seconds to gain {condense_gain} Mana...")
+    print(f"Condensing Mana for {condense_duration} seconds to gain {int(condense_gain)} Mana...")
     loading_bar(condense_duration)
 
     for resource_dict in resources:
         if "Mana" in resource_dict:
-            resource_dict["Mana"]["Amount"] += condense_gain
+            resource_dict["Mana"]["Amount"] += int(condense_gain)
             if resource_dict["Mana"]["Amount"] > max_mana:
                 resource_dict["Mana"]["Amount"] = max_mana
+                print("I do not have the strength to contain more mana... I'll need to store it somehow.")
+                if resources[0]["Crystallized Mana"]["Discovered"] == False:
+                    resources[0]["Crystallized Mana"]["Discovered"] = True
+                    print(f"Ability to Crystallized Mana has been discovered")
     save_game()
     print(f"Mana Condensation Complete! Gained {int(condense_gain)} Mana.  You now have {int(resource_dict['Mana']['Amount'])} Mana")
     check_discovered_status()
 
 def check_discovered_status():
-    if resources[0]["Runes"]["Discovered"] != True:
-        if resources[0]["Mana"]["Amount"] >= resources[0]["Runes"]["Cost"]:
-            resources[0]["Runes"]["Discovered"] = True
-            print("New resource discovered!  Runes!")
-    if resources[0]["Mirror Image"]["Discovered"] != True:
-        if resources[0]["Mana"]["Amount"] >= resources[0]["Mirror Image"]["Cost"]:
-            resources[0]["Mirror Image"]["Discovered"] = True
-            print("New resource discovered!  Mirror Image!")
-    if resources[0]["Simulacrum"]["Discovered"] != True:
-        if resources[0]["Mana"]["Amount"] >= resources[0]["Simulacrum"]["Cost"]:
-            resources[0]["Simulacrum"]["Discovered"] = True
-            print("New resource discovered!  Simulacrum!")
-    save_game()
+    for resource_name, resource_data in resources[0].items():
+        if not resource_data["Discovered"]:
+            if resource_data["Purchasable"]:
+                if resources[0]["Mana"]["Amount"] >= resource_data["Cost"]:
+                    resource_data["Discovered"] = True
+                    print(f"New conjuration discovered!  {resource_name}!")
+                    save_game()
     return
 
 
+def crystallize_mana():
+    print("If I do this, it will take up all my mana and anything I've created from it... Should I do it? (Yes / No)")
+    response = input()
+    if response.lower() == "yes":
+        crystal = resources[0]["Mana"]["Amount"] / 50_000
+        resources[0]["Crystallized Mana"]["Amount"] += crystal
+        resources[0]["Mana"]["Amount", "Cost"] = default_resources[0]["Mana"]["Amount", "Cost"]
+        resources[0]["Runes"]["Amount", "Cost"] = default_resources[0]["Runes"]["Amount", "Cost"]
+        resources[0]["Mirror Image"]["Amount", "Cost"] = default_resources[0]["Mirror Image"]["Amount", "Cost"]
+        resources[0]["Simulacrum"]["Amount", "Cost"] = default_resources[0]["Simulacrum"]["Amount", "Cost"]
+        print(f"I did it, it's done... I was able to create {crystal} Crystallized Mana.")
+        save_game()
+    else:
+        return
 
 def save_game():
     with open("save.json", "w") as save_file:
@@ -195,6 +213,8 @@ def help_command():
     print("  check <resource_name> - Check amount of a specific resource (e.g., check mana)")
     print("  purchase <resource_name> - Purchase a resource.")
     print("  condense - Begin condensing mana.")
+    if resources[0]["Crystallized Mana"]["Discovered"] == True:
+        print("  crystallize - Crystallize Mana")
     print("  help - Display this help message.")
     print("  exit - Quit the program.")
 
@@ -259,6 +279,11 @@ def main():
         elif command_parts[0] == "exit":
             print("Exiting...")
             break
+        elif command_parts[0] == "crystallize":
+            if resources[0]["Crystallized Mana"]["Discovered"] == True:
+                crystallize_mana()
+            else:
+                print("I'm not sure how to do that... yet.")
         else:
             print("Invalid Command. Type 'help' for available commands.")
         print()
