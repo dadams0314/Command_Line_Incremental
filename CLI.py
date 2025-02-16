@@ -219,7 +219,9 @@ def help_command():
     print("  exit - Quit the program.")
 
 def main():
-
+    # Set buffer size using mode con: (Windows cmd.exe specific)
+    os.system("mode con: cols=150 lines=50")
+    os.system("echo off")
     # Startup Splash
     print(Startup_Art)
     print("Welcome to the game... Command Line Incremental!")
